@@ -1,3 +1,5 @@
+import { isSupportedImageFile } from './imageSupport'
+
 export interface ConvertConfig {
   enabled: boolean
   quality: number
@@ -16,15 +18,11 @@ function changeFileExtension(filename: string, newExt: string): string {
   return filename.slice(0, lastDotIndex) + newExt
 }
 
-function isImageFile(file: File): boolean {
-  return file.type.startsWith('image/')
-}
-
 export async function convertToWebp(
   file: File,
   quality: number = DEFAULT_QUALITY
 ): Promise<File> {
-  if (!isImageFile(file)) {
+  if (!isSupportedImageFile(file)) {
     return file
   }
 

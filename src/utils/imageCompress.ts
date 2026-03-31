@@ -1,5 +1,6 @@
 import { getFileExtension } from './rename'
 import { formatFileSize } from './format'
+import { isSupportedImageFile } from './imageSupport'
 
 export interface CompressConfig {
   enabled: boolean
@@ -15,10 +16,6 @@ const DEFAULT_MAX_WIDTH = 1920
 const DEFAULT_MAX_HEIGHT = 1080
 const MAX_FILE_SIZE = 50 * 1024 * 1024
 const MAX_DIMENSION = 10000
-
-function isImageFile(file: File): boolean {
-  return file.type.startsWith('image/')
-}
 
 function calculateNewDimensions(
   imgWidth: number,
@@ -53,7 +50,7 @@ export async function compressImage(
     throw new Error(`文件过大，最大支持 ${formatFileSize(MAX_FILE_SIZE)}`)
   }
 
-  if (!isImageFile(file)) {
+  if (!isSupportedImageFile(file)) {
     return file
   }
 
