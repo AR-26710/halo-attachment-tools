@@ -46,12 +46,12 @@ const sizeConfig = {
 
 <template>
   <div
-    class="card bg-base-200/50 border border-base-300/50"
+    class="card bg-base-300 border-2 border-base-300"
     :class="variant === 'compact' ? 'py-6' : sizeConfig[size].padding"
   >
     <div class="card-body items-center text-center">
       <div
-        class="rounded-full bg-base-300/50 flex items-center justify-center mb-4"
+        class="rounded-full bg-base-100 flex items-center justify-center mb-4"
         :class="size === 'sm' ? 'w-16 h-16' : size === 'lg' ? 'w-32 h-32' : 'w-24 h-24'"
       >
         <Icon
