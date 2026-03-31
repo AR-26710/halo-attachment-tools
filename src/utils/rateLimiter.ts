@@ -1,0 +1,81 @@
+export interface RateLimiterConfig {
+  maxRequests: number
+  windowMs: number
+  minDelay?: number
+}
+
+interface RequestRecord {
+  timestamp: number
+}
+
+export class RateLimiter {
+  private readonly maxRequests: number
+  private readonly windowMs: number
+  private readonly minDelay: number
+  private requests: RequestRecord[] = []
+  private lastRequestTime = 0
+
+  constructor(config: RateLimiterConfig) {
+    this.maxRequests = config.maxRequests
+    this.windowMs = config.windowMs
+    this.minDelay = config.minDelay ?? 0
+  }
+
+  private cleanOldRequests(): void {
+    const now = Date.now()
+    const cutoff = now - this.windowMs
+    this.requests = this.requests.filter((req) => req.timestamp > cutoff)
+  }
+
+  private getCurrentCount(): number {
+    this.cleanOldRequests()
+    return this.requests.length
+  }
+
+  canMakeRequest(): boolean {
+    return this.getCurrentCount() < this.maxRequests
+  }
+
+  async waitForSlot(): Promise<void> {
+    while (!this.canMakeRequest()) {
+      const now = Date.now()
+      const oldestRequest = this.requests[0]
+      if (oldestRequest) {
+        const waitTime = oldestRequest.timestamp + this.windowMs - now + 10
+        if (waitTime > 0) {
+          await this.delay(waitTime)
+        }
+      }
+      this.cleanOldRequests()
+    }
+
+    if (this.minDelay > 0) {
+      const now = Date.now()
+      const timeSinceLastRequest = now - this.lastRequestTime
+      if (timeSinceLastRequest < this.minDelay) {
+        await this.delay(this.minDelay - timeSinceLastRequest)
+      }
+    }
+  }
+
+  recordRequest(): void {
+    this.requests.push({ timestamp: Date.now() })
+    this.lastRequestTime = Date.now()
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+  }
+}
+
+export const defaultRateLimiter = new RateLimiter({
+  maxRequests: 100,
+  windowMs: 60000,
+  minDelay: 100,
+})
+
+export const uploadRateLimiter = new RateLimiter({
+  maxRequests: 20,
+  windowMs: 60000,
+  minDelay: 200,
+})

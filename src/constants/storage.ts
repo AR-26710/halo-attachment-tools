@@ -1,0 +1,5 @@
+export const AUTH_STORAGE_KEY = 'halo_auth_config'
+export const AUTH_SESSION_KEY = 'halo_auth_session'
+export const RENAME_CONFIG_STORAGE_KEY = 'halo_rename_config'
+export const CONVERT_CONFIG_STORAGE_KEY = 'halo_convert_config'
+export const COMPRESS_CONFIG_STORAGE_KEY = 'halo_compress_config'

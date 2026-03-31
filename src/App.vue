@@ -1,30 +1,47 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import { onMounted, ref } from 'vue'
+import { AppLayout } from '@/layouts'
+import { AppHeader } from '@/components/ui'
+import { AttachmentUploadView } from '@/views'
+import { useAppStore } from '@/stores'
+
+const appStore = useAppStore()
+
+onMounted(() => {
+  appStore.initTheme()
+})
+
+const attachmentUploadViewRef = ref<InstanceType<typeof AttachmentUploadView> | null>(null)
+
+function handleOpenConfig() {
+  attachmentUploadViewRef.value?.openConfigModal()
+}
 </script>
 
 <template>
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
-  </div>
-  <HelloWorld msg="Vite + Vue" />
+  <AppLayout>
+    <template #header>
+      <AppHeader
+        title="Halo 附件工具"
+        subtitle="上传附件到你的 Halo 站点"
+        @open-config="handleOpenConfig"
+      />
+    </template>
+
+    <AttachmentUploadView ref="attachmentUploadViewRef" />
+  </AppLayout>
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+<style>
+html {
+  height: 100%;
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+
+body {
+  min-height: 100%;
+  margin: 0;
+  display: block !important;
+  place-items: unset;
 }
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
+
 </style>

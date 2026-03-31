@@ -1,0 +1,5 @@
+export { default as RenameConfigPanel } from './RenameConfigPanel.vue'
+export { default as ConvertConfigPanel } from './ConvertConfigPanel.vue'
+export { default as CompressConfigPanel } from './CompressConfigPanel.vue'
+export { default as QuickLinkPanel } from './QuickLinkPanel.vue'
+export { default as UploadConfigModal } from './UploadConfigModal.vue'
