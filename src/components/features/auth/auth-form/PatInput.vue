@@ -80,6 +80,9 @@ defineExpose({
           :value="modelValue"
           :type="showPassword ? 'text' : 'password'"
           placeholder="pat_xxxxxxxxxxxxxxxx"
+          autocomplete="off"
+          data-lpignore="true"
+          data-form-type="other"
           :class="[
             'input input-bordered input-sm md:input-md w-full pr-10',
             error ? 'input-error' : ''

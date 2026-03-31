@@ -73,6 +73,7 @@ defineExpose({
       :value="modelValue"
       type="url"
       placeholder="https://your-halo-site.com"
+      autocomplete="url"
       :class="[
         'input input-bordered input-sm md:input-md w-full',
         error ? 'input-error' : ''

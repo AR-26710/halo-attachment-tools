@@ -75,6 +75,7 @@ defineExpose({
         :value="username"
         type="text"
         placeholder="请输入用户名"
+        autocomplete="username"
         :class="[
           'input input-bordered input-sm md:input-md w-full',
           usernameError ? 'input-error' : ''
@@ -96,6 +97,7 @@ defineExpose({
           :value="password"
           :type="showPassword ? 'text' : 'password'"
           placeholder="请输入密码"
+          autocomplete="current-password"
           :class="[
             'input input-bordered input-sm md:input-md w-full pr-10',
             passwordError ? 'input-error' : ''

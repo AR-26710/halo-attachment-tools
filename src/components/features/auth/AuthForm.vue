@@ -61,7 +61,7 @@ const canSave = computed(() => {
         认证配置
       </h2>
 
-      <div class="space-y-4 md:space-y-6">
+      <form class="space-y-4 md:space-y-6" @submit.prevent>
         <section class="space-y-3 md:space-y-4">
           <SiteUrlInput
             ref="siteUrlInputRef"
@@ -128,7 +128,7 @@ const canSave = computed(() => {
           @save="emit('save')"
           @cancel="emit('cancel')"
         />
-      </div>
+      </form>
     </div>
   </div>
 </template>
