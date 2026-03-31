@@ -39,6 +39,11 @@ export const useAuthStore = defineStore(
         message: result.success ? '连接成功！' : result.error || '连接失败',
       }
       testing.value = false
+
+      setTimeout(() => {
+        testResult.value = null
+      }, 3000)
+
       return result.success
     }
 
