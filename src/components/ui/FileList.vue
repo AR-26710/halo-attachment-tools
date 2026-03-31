@@ -121,12 +121,12 @@ function getStatusText(status?: string) {
             class="hover:bg-base-200/40 transition-colors"
             :class="{ 'opacity-60': fileItem.status === 'uploading' }"
           >
-            <td class="w-full">
+            <td class="max-w-[280px] lg:max-w-[360px]">
               <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-lg bg-base-200/80 flex items-center justify-center shrink-0">
                   <Icon :icon="getFileIcon(fileItem.file.type)" class="h-5 w-5 text-base-content/70" />
                 </div>
-                <div class="min-w-0 flex-1">
+                <div class="min-w-0 flex-1 overflow-hidden">
                   <span class="text-sm font-medium truncate block" :title="fileItem.renamedFileName || fileItem.file.name">
                     {{ fileItem.renamedFileName || fileItem.file.name }}
                   </span>
