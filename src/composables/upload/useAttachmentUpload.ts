@@ -3,6 +3,7 @@ import { useAuthConnection } from '@/composables/auth'
 import { useUploadCore, useFileSelect} from '@/composables'
 
 import { useFileRename, useFileConvert, useFileCompress } from '@/composables/file'
+import type { FileItem } from '@/composables/upload/useFileSelect'
 
 export function useAttachmentUpload() {
   const {
@@ -65,7 +66,7 @@ export function useAttachmentUpload() {
   const templatePreview = computed(() => getPreviewFilename())
 
   // 计算并更新文件的重命名后文件名
-  function updateRenamedFileName(fileItem: any) {
+  function updateRenamedFileName(fileItem: FileItem) {
     if (isCustomMode.value) {
       fileItem.renamedFileName = rename(fileItem.originalFileName)
     } else {
@@ -85,7 +86,7 @@ export function useAttachmentUpload() {
     loadData()
   }
 
-  async function processFile(file: File, fileItem?: any): Promise<File> {
+  async function processFile(file: File, fileItem?: FileItem): Promise<File> {
     let processedFile = file
     if (compressEnabled.value) {
       processedFile = await compress(processedFile)
