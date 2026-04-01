@@ -2,7 +2,7 @@
 import type { FileItem } from '@/composables/upload'
 import { formatFileSize, getFileIcon, getFileTypeName } from '@/utils'
 import { Icon } from '@iconify/vue'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps<{
   files: FileItem[]
@@ -15,6 +15,9 @@ defineEmits<{
   (e: 'upload', id: string): void
 }>()
 
+const currentPage = ref(1)
+const pageSize = 10
+
 const allUploaded = computed(() => {
   return props.files.length > 0 && props.files.every(f => f.status === 'success')
 })
@@ -22,6 +25,42 @@ const allUploaded = computed(() => {
 const pendingCount = computed(() => {
   return props.files.filter(f => f.status !== 'success').length
 })
+
+const totalPages = computed(() => {
+  return Math.ceil(props.files.length / pageSize)
+})
+
+const paginatedFiles = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  const end = start + pageSize
+  return props.files.slice(start, end)
+})
+
+const startIndex = computed(() => {
+  return (currentPage.value - 1) * pageSize + 1
+})
+
+const endIndex = computed(() => {
+  return Math.min(currentPage.value * pageSize, props.files.length)
+})
+
+function goToPage(page: number) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
+function goToPrevPage() {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
+function goToNextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
 
 function getStatusIcon(status?: string) {
   switch (status) {
@@ -116,7 +155,7 @@ function getStatusText(status?: string) {
         </thead>
         <tbody>
           <tr
-            v-for="fileItem in files"
+            v-for="fileItem in paginatedFiles"
             :key="fileItem.id"
             class="hover:bg-base-200/40 transition-colors"
             :class="{ 'opacity-60': fileItem.status === 'uploading' }"
@@ -184,7 +223,7 @@ function getStatusText(status?: string) {
 
     <div class="md:hidden space-y-3">
       <div
-        v-for="fileItem in files"
+        v-for="fileItem in paginatedFiles"
         :key="fileItem.id"
         class="card bg-base-100 border border-base-300 overflow-hidden shadow-sm"
         :class="{ 'opacity-60': fileItem.status === 'uploading' }"
@@ -250,6 +289,43 @@ function getStatusText(status?: string) {
             >
               <Icon icon="mdi:delete-outline" class="h-4 w-4" />
               <span>删除</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="totalPages > 1" class="card bg-base-100 border border-base-300 overflow-hidden">
+      <div class="card-body p-3 md:p-4">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="text-sm text-base-content/70">
+            显示第 <span class="font-medium text-base-content">{{ startIndex }}</span> - <span class="font-medium text-base-content">{{ endIndex }}</span> 条，共 <span class="font-medium text-base-content">{{ files.length }}</span> 条
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button
+              class="btn btn-sm btn-ghost"
+              :disabled="currentPage === 1"
+              @click="goToPrevPage"
+            >
+              <Icon icon="mdi:chevron-left" class="h-4 w-4" />
+            </button>
+            <div class="flex items-center gap-1">
+              <button
+                v-for="page in totalPages"
+                :key="page"
+                class="btn btn-sm min-w-[2rem]"
+                :class="page === currentPage ? 'btn-primary' : 'btn-ghost'"
+                @click="goToPage(page)"
+              >
+                {{ page }}
+              </button>
+            </div>
+            <button
+              class="btn btn-sm btn-ghost"
+              :disabled="currentPage === totalPages"
+              @click="goToNextPage"
+            >
+              <Icon icon="mdi:chevron-right" class="h-4 w-4" />
             </button>
           </div>
         </div>
