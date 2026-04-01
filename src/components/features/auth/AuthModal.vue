@@ -27,6 +27,7 @@ const {
   resetForm,
   clearForm,
   buildConfig,
+  clearDraft,
 } = useAuthForm(props.initialConfig)
 
 const {
@@ -56,6 +57,7 @@ async function handleSave() {
   if (!config) return
 
   await saveConfig(config)
+  clearDraft()
   emit('saved')
   emit('close')
 }

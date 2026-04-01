@@ -1,7 +1,18 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { AuthConfig } from '@/types'
 
+const AUTH_FORM_DRAFT_KEY = 'halo_auth_form_draft'
+
 type AuthType = 'pat' | 'basic'
+
+interface FormDraft {
+  authType: AuthType
+  siteUrl: string
+  pat: string
+  username: string
+  password: string
+  rememberAuth: boolean
+}
 
 export function useAuthForm(initialConfig?: AuthConfig | null) {
   const authType = ref<AuthType>(initialConfig?.type ?? 'pat')
@@ -19,6 +30,34 @@ export function useAuthForm(initialConfig?: AuthConfig | null) {
     return !!(username.value.trim() && password.value.trim())
   })
 
+  function saveDraft() {
+    const draft: FormDraft = {
+      authType: authType.value,
+      siteUrl: siteUrl.value,
+      pat: pat.value,
+      username: username.value,
+      password: password.value,
+      rememberAuth: rememberAuth.value,
+    }
+    sessionStorage.setItem(AUTH_FORM_DRAFT_KEY, JSON.stringify(draft))
+  }
+
+  function loadDraft(): FormDraft | null {
+    const stored = sessionStorage.getItem(AUTH_FORM_DRAFT_KEY)
+    if (stored) {
+      try {
+        return JSON.parse(stored)
+      } catch {
+        return null
+      }
+    }
+    return null
+  }
+
+  function clearDraft() {
+    sessionStorage.removeItem(AUTH_FORM_DRAFT_KEY)
+  }
+
   function resetForm(config?: AuthConfig | null) {
     if (config) {
       authType.value = config.type
@@ -27,13 +66,24 @@ export function useAuthForm(initialConfig?: AuthConfig | null) {
       username.value = config.username ?? ''
       password.value = config.password ?? ''
       rememberAuth.value = config.rememberAuth ?? false
+      clearDraft()
     } else {
-      authType.value = 'pat'
-      siteUrl.value = ''
-      pat.value = ''
-      username.value = ''
-      password.value = ''
-      rememberAuth.value = false
+      const draft = loadDraft()
+      if (draft) {
+        authType.value = draft.authType
+        siteUrl.value = draft.siteUrl
+        pat.value = draft.pat
+        username.value = draft.username
+        password.value = draft.password
+        rememberAuth.value = draft.rememberAuth
+      } else {
+        authType.value = 'pat'
+        siteUrl.value = ''
+        pat.value = ''
+        username.value = ''
+        password.value = ''
+        rememberAuth.value = false
+      }
     }
   }
 
@@ -44,6 +94,7 @@ export function useAuthForm(initialConfig?: AuthConfig | null) {
     username.value = ''
     password.value = ''
     rememberAuth.value = false
+    clearDraft()
   }
 
   function buildConfig(): AuthConfig | null {
@@ -60,6 +111,13 @@ export function useAuthForm(initialConfig?: AuthConfig | null) {
     }
   }
 
+  watch([authType, siteUrl, pat, username, password, rememberAuth], () => {
+    const hasAnyValue = siteUrl.value || pat.value || username.value || password.value
+    if (hasAnyValue) {
+      saveDraft()
+    }
+  }, { deep: true })
+
   return {
     authType,
     siteUrl,
@@ -70,5 +128,6 @@ export function useAuthForm(initialConfig?: AuthConfig | null) {
     resetForm,
     clearForm,
     buildConfig,
+    clearDraft,
   }
 }
