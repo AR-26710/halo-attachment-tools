@@ -2,8 +2,9 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthConnection } from '@/composables/auth'
 import { useUploadCore, useFileSelect} from '@/composables'
 
-import { useFileRename, useFileConvert, useFileCompress } from '@/composables/file'
+import { useFileRename, useFileConvert, useFileCompress, useRenameHistory } from '@/composables/file'
 import type { FileItem } from '@/composables/upload/useFileSelect'
+import type { RenameRecord } from '@/composables/file'
 
 export function useAttachmentUpload() {
   const {
@@ -59,6 +60,17 @@ export function useAttachmentUpload() {
     compressing,
     compress,
   } = useFileCompress()
+
+  const {
+    enabled: renameHistoryEnabled,
+    history: renameHistory,
+    hasHistory: hasRenameHistory,
+    setEnabled: setRenameHistoryEnabled,
+    addHistoryEntry,
+    clearHistory: clearRenameHistory,
+    removeHistoryEntry,
+    downloadJSON: downloadRenameHistoryJSON,
+  } = useRenameHistory()
 
   const quickLinkEnabled = ref(true)
 
@@ -123,7 +135,25 @@ export function useAttachmentUpload() {
   async function handleUpload() {
     const pendingFiles = originalFiles.value.filter(f => f.status !== 'success')
     if (pendingFiles.length === 0) return
+
+    const renameRecords: RenameRecord[] = []
+
+    if (renameHistoryEnabled.value && isCustomMode.value) {
+      pendingFiles.forEach(fileItem => {
+        if (fileItem.renamedFileName && fileItem.renamedFileName !== fileItem.originalFileName) {
+          renameRecords.push({
+            originalName: fileItem.originalFileName,
+            newName: fileItem.renamedFileName,
+          })
+        }
+      })
+    }
+
     await uploadFilesCore(pendingFiles, processFile)
+
+    if (renameRecords.length > 0) {
+      addHistoryEntry(renameRecords)
+    }
   }
 
   watch(uploading, (newVal) => {
@@ -213,6 +243,13 @@ export function useAttachmentUpload() {
     compressMaxConcurrent,
     compressing,
     quickLinkEnabled,
+    renameHistoryEnabled,
+    renameHistory,
+    hasRenameHistory,
+    setRenameHistoryEnabled,
+    clearRenameHistory,
+    removeHistoryEntry,
+    downloadRenameHistoryJSON,
     showAuthModal,
     openAuthModal,
     closeAuthModal,

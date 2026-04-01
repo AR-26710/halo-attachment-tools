@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
-import { RenameConfigPanel, ConvertConfigPanel, CompressConfigPanel, QuickLinkConfigPanel } from '.'
+import { RenameConfigPanel, ConvertConfigPanel, CompressConfigPanel, QuickLinkConfigPanel, RenameHistoryConfigPanel } from '.'
 import type { RenameMode } from '@/composables/file'
 
 interface Props {
@@ -18,6 +18,7 @@ interface Props {
   compressKeepOriginalFormat: boolean
   compressMaxConcurrent: number
   quickLinkEnabled: boolean
+  renameHistoryEnabled: boolean
 }
 
 defineProps<Props>()
@@ -36,6 +37,7 @@ const emit = defineEmits<{
   (e: 'update:compressKeepOriginalFormat', value: boolean): void
   (e: 'update:compressMaxConcurrent', value: number): void
   (e: 'update:quickLinkEnabled', value: boolean): void
+  (e: 'update:renameHistoryEnabled', value: boolean): void
 }>()
 
 function handleClose() {
@@ -103,6 +105,12 @@ function handleClose() {
           :enabled="quickLinkEnabled"
           :disabled="disabled"
           @update:enabled="emit('update:quickLinkEnabled', $event)"
+        />
+
+        <RenameHistoryConfigPanel
+          :enabled="renameHistoryEnabled"
+          :disabled="disabled"
+          @update:enabled="emit('update:renameHistoryEnabled', $event)"
         />
       </div>
 

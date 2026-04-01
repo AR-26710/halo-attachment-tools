@@ -23,8 +23,8 @@ function handleEnabledChange(event: Event) {
   <BaseCard>
     <div class="flex items-center justify-between -mt-2 pt-6">
       <div class="flex items-center gap-2">
-        <Icon icon="mdi:content-copy" class="h-5 w-5 text-primary" />
-        <h3 class="card-title text-sm font-medium">快捷链接</h3>
+        <Icon icon="mdi:history" class="h-5 w-5 text-primary" />
+        <h3 class="card-title text-sm font-medium">重命名记录</h3>
       </div>
       <label class="flex items-center gap-3 cursor-pointer" :class="{ 'opacity-50 cursor-not-allowed': disabled }">
         <input
@@ -38,8 +38,8 @@ function handleEnabledChange(event: Event) {
     </div>
 
     <div class="mt-4 text-xs text-base-content/60 space-y-1">
-      <p>启用后，上传完成后会显示快捷链接面板，支持复制图片链接。</p>
-      <p>支持 URL、Markdown、HTML、BBCode 等多种格式。</p>
+      <p>开启后，每次上传时会记录原始文件名与修改后的文件名映射关系</p>
+      <p>记录以同一次上传的文件为单位进行存储，支持导出为 JSON 格式</p>
     </div>
   </BaseCard>
 </template>

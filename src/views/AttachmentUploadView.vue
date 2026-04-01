@@ -5,7 +5,7 @@ import { Icon } from '@iconify/vue'
 import { AuthCard, AuthModal } from '@/components/features/auth'
 import { useAttachmentUpload } from '@/composables/upload'
 
-import { PolicySelector, GroupSelector, UploadConfigModal, EmptyState, QuickLinkPanel } from '@/components/features'
+import { PolicySelector, GroupSelector, UploadConfigModal, EmptyState, QuickLinkPanel, RenameHistoryPanel } from '@/components/features'
 import { FileDropZone, FileList, Skeleton } from '@/components/ui'
 
 const {
@@ -34,6 +34,12 @@ const {
   compressKeepOriginalFormat,
   compressMaxConcurrent,
   quickLinkEnabled,
+  renameHistoryEnabled,
+  renameHistory,
+  setRenameHistoryEnabled,
+  clearRenameHistory,
+  removeHistoryEntry,
+  downloadRenameHistoryJSON,
   showAuthModal,
   openAuthModal,
   closeAuthModal,
@@ -147,6 +153,14 @@ defineExpose({
 
         <QuickLinkPanel v-if="quickLinkEnabled" :files="files" :site-url="authConfig?.siteUrl" />
 
+        <RenameHistoryPanel
+          :enabled="renameHistoryEnabled"
+          :history="renameHistory"
+          @download="downloadRenameHistoryJSON"
+          @clear="clearRenameHistory"
+          @remove="removeHistoryEntry"
+        />
+
         <div v-if="files.length > 0" class="flex justify-center pt-2">
           <button
             class="btn btn-primary btn-wide btn-sm md:btn-md shadow-lg"
@@ -184,6 +198,7 @@ defineExpose({
       :compress-keep-original-format="compressKeepOriginalFormat"
       :compress-max-concurrent="compressMaxConcurrent"
       :quick-link-enabled="quickLinkEnabled"
+      :rename-history-enabled="renameHistoryEnabled"
       @close="closeConfigModal"
       @update:rename-mode="renameMode = $event"
       @update:rename-template="renameTemplate = $event"
@@ -197,6 +212,7 @@ defineExpose({
       @update:compress-keep-original-format="compressKeepOriginalFormat = $event"
       @update:compress-max-concurrent="compressMaxConcurrent = $event"
       @update:quick-link-enabled="quickLinkEnabled = $event"
+      @update:rename-history-enabled="setRenameHistoryEnabled($event)"
     />
 
     <AuthModal
