@@ -31,7 +31,7 @@ const handleDrop = (event: DragEvent) => {
     class="group relative border-2 border-dashed rounded-xl p-8 md:p-10 text-center transition-all duration-300 cursor-pointer overflow-hidden"
     :class="[
       isDragging 
-        ? 'border-primary bg-primary/5 scale-[1.02] shadow-lg shadow-primary/20' 
+        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/20' 
         : 'border-base-content/30 hover:border-primary/60 hover:bg-base-200/30',
       disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
     ]"
@@ -79,13 +79,6 @@ const handleDrop = (event: DragEvent) => {
           />
         </label>
       </div>
-
-      <p class="text-xs text-base-content/40 mt-4">
-        支持多文件上传<span v-if="maxFiles">（最多 {{ maxFiles }} 个）</span>
-      </p>
-      <p v-if="fileCount !== undefined && maxFiles" class="text-xs mt-2" :class="fileCount >= maxFiles ? 'text-error' : 'text-base-content/50'">
-        已选择 {{ fileCount }}/{{ maxFiles }} 个文件
-      </p>
     </div>
   </div>
 </template>

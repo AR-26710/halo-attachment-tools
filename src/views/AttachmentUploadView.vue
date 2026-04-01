@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 
 import { AuthCard, AuthModal } from '@/components/features/auth'
 import { useAttachmentUpload } from '@/composables/upload'
 
 import { PolicySelector, GroupSelector, UploadConfigModal, EmptyState, QuickLinkPanel } from '@/components/features'
-import { FileDropZone, FileList, Skeleton, LoadingProgress, ErrorAlert } from '@/components/ui'
+import { FileDropZone, FileList, Skeleton } from '@/components/ui'
 
 const {
   isAuthenticated,
@@ -20,23 +20,21 @@ const {
   uploading,
   uploadProgress,
   hasPolicies,
+  isRateLimited,
+  rateLimitWaitTime,
   files,
   isDragging,
-  lastError,
-  maxFiles,
   renameMode,
   renameTemplate,
   convertEnabled,
   convertQuality,
   convertMaxConcurrent,
-  converting,
   compressEnabled,
   compressQuality,
   compressMaxWidth,
   compressMaxHeight,
   compressKeepOriginalFormat,
   compressMaxConcurrent,
-  compressing,
   showAuthModal,
   openAuthModal,
   closeAuthModal,
@@ -47,13 +45,16 @@ const {
   handleDragLeave,
   removeFile,
   clearFiles,
-  clearError,
   handleUpload,
   handleSingleUpload,
   handlePolicyOrGroupCreated,
 } = useAttachmentUpload()
 
 const showConfigModal = ref(false)
+
+const buttonText = computed(() => {
+  return uploading.value ? `上传中 ${uploadProgress.value}%` : '开始上传'
+})
 
 function openConfigModal() {
   showConfigModal.value = true
@@ -69,7 +70,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="space-y-4 md:space-y-6">
+  <div class="space-y-4 md:space-y-6 overflow-hidden">
     <AuthCard
       :is-authenticated="isAuthenticated"
       :site-url="authConfig?.siteUrl"
@@ -105,7 +106,7 @@ defineExpose({
       </div>
 
       <template v-else>
-        <div v-if="!hasPolicies" class="alert alert-warning text-sm">
+        <div v-if="!hasPolicies" class="alert alert-warning text-sm shadow-md">
           <Icon icon="mdi:alert-outline" class="h-4 w-4 md:h-5 md:w-5" />
           <span>未找到存储策略，请先在 Halo 后台创建存储策略或点击下方按钮创建</span>
         </div>
@@ -127,19 +128,10 @@ defineExpose({
           />
         </div>
 
-        <ErrorAlert
-          v-if="lastError"
-          :message="lastError.message"
-          retryable
-          @retry="handleUpload"
-          @close="clearError"
-        />
-
         <FileDropZone
           :is-dragging="isDragging"
           :disabled="uploading"
           :file-count="files.length"
-          :max-files="maxFiles"
           @drop="handleDrop"
           @dragover="handleDragOver"
           @dragleave="handleDragLeave"
@@ -156,22 +148,21 @@ defineExpose({
 
         <QuickLinkPanel :files="files" :site-url="authConfig?.siteUrl" />
 
-        <div v-if="files.length > 0" class="flex justify-center">
+        <div v-if="files.length > 0" class="flex justify-center pt-2">
           <button
-            class="btn btn-primary btn-wide btn-sm md:btn-md"
+            class="btn btn-primary btn-wide btn-sm md:btn-md shadow-lg"
             :disabled="!selectedPolicy || uploading"
             @click="handleUpload"
           >
             <span v-if="uploading" class="loading loading-spinner loading-sm"></span>
-            {{ uploading ? (compressing ? '压缩中...' : converting ? '转换中...' : `上传中 ${uploadProgress}%`) : '开始上传' }}
+            {{ buttonText }}
           </button>
         </div>
 
-        <LoadingProgress
-          v-if="uploading"
-          :progress="uploadProgress"
-          :status="compressing ? 'compressing' : converting ? 'converting' : 'uploading'"
-        />
+        <div v-if="isRateLimited" class="alert alert-info text-sm shadow-md">
+          <Icon icon="mdi:clock-outline" class="h-4 w-4 md:h-5 md:w-5" />
+          <span>请求频率过高，等待 {{ rateLimitWaitTime }} 秒后继续...</span>
+        </div>
       </template>
     </template>
 
@@ -220,3 +211,56 @@ defineExpose({
     />
   </div>
 </template>
+
+<style scoped>
+.space-y-4 > * {
+  transition: all 0.3s ease;
+}
+
+.btn {
+  transition: all 0.2s ease;
+  transform: scale(1);
+}
+
+.btn:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.alert {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card {
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+:deep(.space-y-4 > *),
+:deep(.space-y-6 > *) {
+  min-height: 0;
+}
+</style>

@@ -1,8 +1,44 @@
 import axios, { isAxiosError } from 'axios'
-import type { AxiosInstance } from 'axios'
+import type { AxiosInstance, AxiosError } from 'axios'
 import type { AuthManager } from './auth'
 import { defaultRateLimiter, uploadRateLimiter } from '@/utils/rateLimiter'
 import { RequestQueue } from '@/utils/requestQueue'
+import type { RetryConfig } from '@/utils/requestQueue'
+
+const DEFAULT_QUEUE_CONFIG: RetryConfig = {
+  maxRetries: 3,
+  baseDelay: 1000,
+  maxDelay: 10000,
+  retryableStatusCodes: [429, 500, 502, 503, 504],
+}
+
+const UPLOAD_QUEUE_CONFIG: RetryConfig = {
+  maxRetries: 3,
+  baseDelay: 2000,
+  maxDelay: 30000,
+  retryableStatusCodes: [429, 500, 502, 503, 504],
+}
+
+const DEFAULT_CONCURRENCY = 5
+const UPLOAD_CONCURRENCY = 3
+
+const ERROR_MESSAGES = {
+  UNAUTHORIZED: '认证失败，请检查认证信息',
+  FORBIDDEN: '权限不足',
+  NETWORK_ERROR: '无法连接到服务器，请检查配置是否正确',
+  UNKNOWN: '未知错误',
+  CLIENT_NOT_INITIALIZED: '客户端未初始化',
+} as const
+
+const HTTP_STATUS = {
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+} as const
+
+const AXIOS_ERROR_CODES = {
+  NETWORK: 'ERR_NETWORK',
+  CONNECTION_REFUSED: 'ECONNREFUSED',
+} as const
 
 export class ApiClient {
   private client: AxiosInstance | null = null
@@ -12,18 +48,8 @@ export class ApiClient {
 
   constructor(authManager: AuthManager) {
     this.authManager = authManager
-    this.requestQueue = new RequestQueue(defaultRateLimiter, {
-      maxRetries: 3,
-      baseDelay: 1000,
-      maxDelay: 10000,
-      retryableStatusCodes: [429, 500, 502, 503, 504],
-    }, 5)
-    this.uploadQueue = new RequestQueue(uploadRateLimiter, {
-      maxRetries: 3,
-      baseDelay: 2000,
-      maxDelay: 30000,
-      retryableStatusCodes: [429, 500, 502, 503, 504],
-    }, 3)
+    this.requestQueue = new RequestQueue(defaultRateLimiter, DEFAULT_QUEUE_CONFIG, DEFAULT_CONCURRENCY)
+    this.uploadQueue = new RequestQueue(uploadRateLimiter, UPLOAD_QUEUE_CONFIG, UPLOAD_CONCURRENCY)
   }
 
   init(): void {
@@ -43,32 +69,44 @@ export class ApiClient {
 
     this.client.interceptors.response.use(
       (response) => response,
-      (error) => {
-        if (isAxiosError(error)) {
-          if (error.response?.status === 401) {
-            return Promise.reject(new Error('认证失败，请检查认证信息'))
-          }
-          if (error.response?.status === 403) {
-            return Promise.reject(new Error('权限不足'))
-          }
-          if (error.code === 'ERR_NETWORK' || error.code === 'ECONNREFUSED') {
-            return Promise.reject(new Error('无法连接到服务器，请检查配置是否正确'))
-          }
-          if (error.response?.data?.message) {
-            return Promise.reject(new Error(error.response.data.message))
-          }
-          if (error.message) {
-            return Promise.reject(new Error(error.message))
-          }
-        }
-        return Promise.reject(new Error('未知错误'))
-      }
+      (error) => this.handleError(error)
     )
+  }
+
+  private handleError(error: unknown): Promise<never> {
+    if (!isAxiosError(error)) {
+      return Promise.reject(new Error(ERROR_MESSAGES.UNKNOWN))
+    }
+
+    const message = this.resolveErrorMessage(error)
+    return Promise.reject(new Error(message))
+  }
+
+  private resolveErrorMessage(error: AxiosError): string {
+    const status = error.response?.status
+    const responseData = error.response?.data
+    const responseMessage = typeof responseData === 'object' && responseData !== null && 'message' in responseData
+      ? String(responseData.message)
+      : undefined
+
+    if (status === HTTP_STATUS.UNAUTHORIZED) {
+      return ERROR_MESSAGES.UNAUTHORIZED
+    }
+
+    if (status === HTTP_STATUS.FORBIDDEN) {
+      return ERROR_MESSAGES.FORBIDDEN
+    }
+
+    if (error.code === AXIOS_ERROR_CODES.NETWORK || error.code === AXIOS_ERROR_CODES.CONNECTION_REFUSED) {
+      return ERROR_MESSAGES.NETWORK_ERROR
+    }
+
+    return responseMessage || error.message || ERROR_MESSAGES.UNKNOWN
   }
 
   getClient(): AxiosInstance {
     if (!this.client) {
-      throw new Error('客户端未初始化')
+      throw new Error(ERROR_MESSAGES.CLIENT_NOT_INITIALIZED)
     }
     return this.client
   }
@@ -87,5 +125,9 @@ export class ApiClient {
 
   async upload<T>(execute: () => Promise<T>, priority = 10): Promise<T> {
     return this.uploadQueue.enqueue(execute, priority)
+  }
+
+  setOnUploadRateLimitWait(callback: (waitTimeMs: number) => void): void {
+    this.uploadQueue.setOnRateLimitWaitCallback(callback)
   }
 }

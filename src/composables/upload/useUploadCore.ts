@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { haloApi } from '@/api'
 import { POLICY_LABELS, GROUP_LABELS } from '@/constants'
 import type { Policy, PolicyTemplate, Group, Attachment } from '@/types'
@@ -56,6 +56,8 @@ export function useUploadCore() {
   const loading = ref(false)
   const uploading = ref(false)
   const uploadProgress = ref(0)
+  const rateLimitWaitTime = ref(0)
+  const isRateLimited = computed(() => rateLimitWaitTime.value > 0)
 
   const policies = computed(() => {
     return allPolicies.value.filter((policy) => {
@@ -75,6 +77,20 @@ export function useUploadCore() {
 
   const hasPolicies = computed(() => policies.value.length > 0)
   const hasGroups = computed(() => groups.value.length > 0)
+
+  onMounted(() => {
+    haloApi.setOnUploadRateLimitWait((waitTimeMs) => {
+      rateLimitWaitTime.value = Math.ceil(waitTimeMs / 1000)
+      if (waitTimeMs > 0) {
+        const timer = setInterval(() => {
+          rateLimitWaitTime.value = Math.max(0, rateLimitWaitTime.value - 1)
+          if (rateLimitWaitTime.value <= 0) {
+            clearInterval(timer)
+          }
+        }, 1000)
+      }
+    })
+  })
 
   async function loadData(): Promise<void> {
     loading.value = true
@@ -114,6 +130,7 @@ export function useUploadCore() {
 
     uploading.value = true
     uploadProgress.value = 0
+    rateLimitWaitTime.value = 0
 
     const results: UploadResultItem[] = []
     const pendingFiles = files.filter(fileItem => fileItem.status !== 'success')
@@ -180,6 +197,7 @@ export function useUploadCore() {
 
     uploading.value = false
     uploadProgress.value = 0
+    rateLimitWaitTime.value = 0
     return results
   }
 
@@ -193,6 +211,8 @@ export function useUploadCore() {
     loading,
     uploading,
     uploadProgress,
+    isRateLimited,
+    rateLimitWaitTime,
     hasPolicies,
     hasGroups,
     loadData,

@@ -1,4 +1,4 @@
-import {ref, watch} from 'vue'
+import {ref, watch, computed} from 'vue'
 import {CONVERT_CONFIG_STORAGE_KEY} from '@/constants'
 import {ConcurrencyLimiter, convertToWebp} from '@/utils'
 import type {ConvertConfig} from '@/utils/imageConvert'
@@ -36,7 +36,8 @@ export function useFileConvert() {
   const enabled = ref(config.enabled)
   const quality = ref(config.quality)
   const maxConcurrent = ref(config.maxConcurrent)
-  const converting = ref(false)
+  const convertingCount = ref(0)
+  const converting = computed(() => convertingCount.value > 0)
 
   const limiter = new ConcurrencyLimiter(maxConcurrent.value)
 
@@ -50,13 +51,13 @@ export function useFileConvert() {
       return file
     }
 
-    converting.value = true
+    convertingCount.value++
     try {
       return await limiter.run(async () => {
         return await convertToWebp(file, quality.value)
       })
     } finally {
-      converting.value = false
+      convertingCount.value--
     }
   }
 

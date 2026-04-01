@@ -22,13 +22,14 @@ export function useAttachmentUpload() {
     uploading,
     uploadProgress,
     hasPolicies,
+    isRateLimited,
+    rateLimitWaitTime,
     loadData,
     refreshData,
     uploadSingleFile: uploadSingleFileCore,
     uploadFiles: uploadFilesCore,
   } = useUploadCore()
 
-  // 直接使用原始的 useFileSelect 并保存引用
   const fileSelect = useFileSelect()
   const originalFiles = fileSelect.files
 
@@ -65,7 +66,6 @@ export function useAttachmentUpload() {
 
   const templatePreview = computed(() => getPreviewFilename())
 
-  // 计算并更新文件的重命名后文件名
   function updateRenamedFileName(fileItem: FileItem) {
     if (isCustomMode.value) {
       fileItem.renamedFileName = rename(fileItem.originalFileName)
@@ -92,13 +92,12 @@ export function useAttachmentUpload() {
       processedFile = await compress(processedFile)
     }
     const convertedFile = await convert(processedFile)
-    if (fileItem && fileItem.renamedFileName) {
+    if (fileItem?.renamedFileName) {
       return getFileWithName(convertedFile, fileItem.renamedFileName)
     }
     return getRenamedFile(convertedFile)
   }
 
-  // 包装文件处理函数，确保添加文件时更新重命名文件名
   function handleFileSelect(event: Event) {
     fileSelect.handleFileSelect(event)
     originalFiles.value.forEach(updateRenamedFileName)
@@ -117,7 +116,6 @@ export function useAttachmentUpload() {
     fileSelect.clearFiles()
   }
 
-  // 监听重命名模式变化，更新所有文件的重命名后文件名
   watch([renameMode, renameTemplate], () => {
     originalFiles.value.forEach(updateRenamedFileName)
   }, { deep: true })
@@ -127,6 +125,10 @@ export function useAttachmentUpload() {
     if (pendingFiles.length === 0) return
     await uploadFilesCore(pendingFiles, processFile)
   }
+
+  watch(uploading, (newVal) => {
+    if (!newVal) { /* empty */ }
+  })
 
   async function handleSingleUpload(id: string) {
     const fileItem = originalFiles.value.find(f => f.id === id)
@@ -193,10 +195,10 @@ export function useAttachmentUpload() {
     uploading,
     uploadProgress,
     hasPolicies,
+    isRateLimited,
+    rateLimitWaitTime,
     files: originalFiles,
     isDragging: fileSelect.isDragging,
-    lastError: fileSelect.lastError,
-    maxFiles: fileSelect.maxFiles,
     renameMode,
     renameTemplate,
     isCustomMode,
@@ -222,7 +224,6 @@ export function useAttachmentUpload() {
     handleDragLeave: fileSelect.handleDragLeave,
     removeFile,
     clearFiles,
-    clearError: fileSelect.clearError,
     handleUpload,
     handleSingleUpload,
     handlePolicyOrGroupCreated,

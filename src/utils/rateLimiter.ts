@@ -14,11 +14,16 @@ export class RateLimiter {
   private readonly minDelay: number
   private requests: RequestRecord[] = []
   private lastRequestTime = 0
+  private onWait?: (waitTimeMs: number) => void
 
   constructor(config: RateLimiterConfig) {
     this.maxRequests = config.maxRequests
     this.windowMs = config.windowMs
     this.minDelay = config.minDelay ?? 0
+  }
+
+  setOnWaitCallback(callback: (waitTimeMs: number) => void): void {
+    this.onWait = callback
   }
 
   private cleanOldRequests(): void {
@@ -36,15 +41,26 @@ export class RateLimiter {
     return this.getCurrentCount() < this.maxRequests
   }
 
+  getWaitTimeMs(): number {
+    if (this.canMakeRequest()) {
+      return 0
+    }
+    const now = Date.now()
+    const oldestRequest = this.requests[0]
+    if (oldestRequest) {
+      return Math.max(0, oldestRequest.timestamp + this.windowMs - now + 10)
+    }
+    return 0
+  }
+
   async waitForSlot(): Promise<void> {
     while (!this.canMakeRequest()) {
-      const now = Date.now()
-      const oldestRequest = this.requests[0]
-      if (oldestRequest) {
-        const waitTime = oldestRequest.timestamp + this.windowMs - now + 10
-        if (waitTime > 0) {
-          await this.delay(waitTime)
-        }
+      const waitTime = this.getWaitTimeMs()
+      if (waitTime > 0 && this.onWait) {
+        this.onWait(waitTime)
+      }
+      if (waitTime > 0) {
+        await this.delay(waitTime)
       }
       this.cleanOldRequests()
     }
@@ -75,7 +91,7 @@ export const defaultRateLimiter = new RateLimiter({
 })
 
 export const uploadRateLimiter = new RateLimiter({
-  maxRequests: 20,
+  maxRequests: 100,
   windowMs: 60000,
   minDelay: 200,
 })

@@ -12,16 +12,6 @@ export interface FileItem {
   attachment?: Attachment
 }
 
-export interface FileSelectError {
-  type: 'max_files_exceeded'
-  message: string
-  maxFiles: number
-  attemptedCount: number
-  currentCount: number
-}
-
-const MAX_FILES = 20
-
 function generateId(): string {
   return Math.random().toString(36).substring(2, 9)
 }
@@ -29,7 +19,6 @@ function generateId(): string {
 export function useFileSelect() {
   const files = ref<FileItem[]>([])
   const isDragging = ref(false)
-  const lastError = ref<FileSelectError | null>(null)
 
   function createFileItem(file: File): FileItem {
     return {
@@ -39,33 +28,12 @@ export function useFileSelect() {
     }
   }
 
-  function addFiles(newFiles: FileList | null): FileSelectError | null {
+  function addFiles(newFiles: FileList | null): null {
     if (!newFiles) return null
 
-    const currentCount = files.value.length
-    const newCount = newFiles.length
-    const totalCount = currentCount + newCount
-
-    if (totalCount > MAX_FILES) {
-      const error: FileSelectError = {
-        type: 'max_files_exceeded',
-        message: `最多只能选择 ${MAX_FILES} 个文件，当前已有 ${currentCount} 个，尝试添加 ${newCount} 个`,
-        maxFiles: MAX_FILES,
-        attemptedCount: newCount,
-        currentCount,
-      }
-      lastError.value = error
-      return error
-    }
-
-    lastError.value = null
     const fileItems = Array.from(newFiles).map(createFileItem)
     files.value = [...files.value, ...fileItems]
     return null
-  }
-
-  function clearError(): void {
-    lastError.value = null
   }
 
   function handleFileSelect(event: Event): void {
@@ -99,14 +67,11 @@ export function useFileSelect() {
   return {
     files,
     isDragging,
-    lastError,
-    maxFiles: MAX_FILES,
     handleFileSelect,
     handleDrop,
     handleDragOver,
     handleDragLeave,
     removeFile,
     clearFiles,
-    clearError,
   }
 }

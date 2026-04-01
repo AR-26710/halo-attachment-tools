@@ -14,37 +14,15 @@ export class AuthManager {
     await this.initPromise
   }
 
-  private async loadAuthConfig(): Promise<void> {
-    const storedLocal = localStorage.getItem(AUTH_STORAGE_KEY)
-    const storedSession = sessionStorage.getItem(AUTH_SESSION_KEY)
-    const stored = storedSession || storedLocal
-
-    if (stored) {
-      try {
-        const decrypted = await decryptData(stored)
-        this.authConfig = JSON.parse(decrypted)
-      } catch {
-        console.error('Failed to parse stored auth config')
-        this.clearAuthConfig()
-      }
-    }
-  }
-
   async saveAuthConfig(config: AuthConfig): Promise<void> {
     this.authConfig = config
     this.clearAllAuthStorage()
+
     const encrypted = await encryptData(JSON.stringify(config))
+    const storage = config.rememberAuth ? localStorage : sessionStorage
+    const key = config.rememberAuth ? AUTH_STORAGE_KEY : AUTH_SESSION_KEY
 
-    if (config.rememberAuth) {
-      localStorage.setItem(AUTH_STORAGE_KEY, encrypted)
-    } else {
-      sessionStorage.setItem(AUTH_SESSION_KEY, encrypted)
-    }
-  }
-
-  private clearAllAuthStorage(): void {
-    localStorage.removeItem(AUTH_STORAGE_KEY)
-    sessionStorage.removeItem(AUTH_SESSION_KEY)
+    storage.setItem(key, encrypted)
   }
 
   clearAuthConfig(): void {
@@ -61,17 +39,20 @@ export class AuthManager {
   }
 
   getAuthHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {}
-    if (!this.authConfig) return headers
+    if (!this.authConfig) return {}
 
-    if (this.authConfig.type === 'pat' && this.authConfig.pat) {
-      headers['Authorization'] = `Bearer ${this.authConfig.pat}`
-    } else if (this.authConfig.type === 'basic' && this.authConfig.username && this.authConfig.password) {
-      const credentials = btoa(`${this.authConfig.username}:${this.authConfig.password}`)
-      headers['Authorization'] = `Basic ${credentials}`
+    const { type, pat, username, password } = this.authConfig
+
+    if (type === 'pat' && pat) {
+      return { Authorization: `Bearer ${pat}` }
     }
 
-    return headers
+    if (type === 'basic' && username && password) {
+      const credentials = btoa(`${username}:${password}`)
+      return { Authorization: `Basic ${credentials}` }
+    }
+
+    return {}
   }
 
   validateConfig(): { valid: boolean; error?: string } {
@@ -81,24 +62,56 @@ export class AuthManager {
 
     const { siteUrl, type, pat, username, password } = this.authConfig
 
-    if (!siteUrl?.trim()) {
+    const urlError = this.validateUrl(siteUrl)
+    if (urlError) return urlError
+
+    if (type === 'pat') {
+      if (!pat?.trim()) {
+        return { valid: false, error: '个人令牌不能为空' }
+      }
+    }
+
+    if (type === 'basic') {
+      if (!username?.trim() || !password?.trim()) {
+        return { valid: false, error: '用户名和密码不能为空' }
+      }
+    }
+
+    return { valid: true }
+  }
+
+  private async loadAuthConfig(): Promise<void> {
+    const stored = this.getStoredAuthData()
+    if (!stored) return
+
+    try {
+      const decrypted = await decryptData(stored)
+      this.authConfig = JSON.parse(decrypted)
+    } catch (error) {
+      console.error('Failed to parse stored auth config:', error)
+      this.clearAuthConfig()
+    }
+  }
+
+  private getStoredAuthData(): string | null {
+    return sessionStorage.getItem(AUTH_SESSION_KEY) ?? localStorage.getItem(AUTH_STORAGE_KEY)
+  }
+
+  private clearAllAuthStorage(): void {
+    localStorage.removeItem(AUTH_STORAGE_KEY)
+    sessionStorage.removeItem(AUTH_SESSION_KEY)
+  }
+
+  private validateUrl(url: string): { valid: false; error: string } | null {
+    if (!url?.trim()) {
       return { valid: false, error: '站点地址不能为空' }
     }
 
     try {
-      new URL(siteUrl)
+      new URL(url)
+      return null
     } catch {
       return { valid: false, error: '站点地址格式不正确' }
     }
-
-    if (type === 'pat' && (!pat?.trim())) {
-      return { valid: false, error: '个人令牌不能为空' }
-    }
-
-    if (type === 'basic' && (!username?.trim() || !password?.trim())) {
-      return { valid: false, error: '用户名和密码不能为空' }
-    }
-
-    return { valid: true }
   }
 }

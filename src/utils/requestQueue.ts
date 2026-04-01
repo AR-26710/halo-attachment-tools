@@ -29,6 +29,7 @@ export class RequestQueue {
   private readonly retryConfig: RetryConfig
   private activeRequests = 0
   private readonly maxConcurrent: number
+  private onRateLimitWait?: (waitTimeMs: number) => void
 
   constructor(
     rateLimiter: RateLimiter,
@@ -38,6 +39,16 @@ export class RequestQueue {
     this.rateLimiter = rateLimiter
     this.retryConfig = { ...defaultRetryConfig, ...retryConfig }
     this.maxConcurrent = maxConcurrent
+    
+    this.rateLimiter.setOnWaitCallback((waitTimeMs) => {
+      if (this.onRateLimitWait) {
+        this.onRateLimitWait(waitTimeMs)
+      }
+    })
+  }
+
+  setOnRateLimitWaitCallback(callback: (waitTimeMs: number) => void): void {
+    this.onRateLimitWait = callback
   }
 
   async enqueue<T>(

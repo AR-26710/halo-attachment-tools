@@ -33,15 +33,14 @@ function handleOpenConfig() {
 </template>
 
 <style>
-html {
-  height: 100%;
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
 }
 
 body {
-  min-height: 100%;
-  margin: 0;
   display: block !important;
   place-items: unset;
 }
-
 </style>

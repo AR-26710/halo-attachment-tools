@@ -1,11 +1,11 @@
 import { ref, computed, watch } from 'vue'
 import type { AuthConfig } from '@/types'
 
-const AUTH_FORM_DRAFT_KEY = 'halo_auth_form_draft'
+const STORAGE_KEY = 'halo_auth_form_draft' as const
 
 type AuthType = 'pat' | 'basic'
 
-interface FormDraft {
+interface FormState {
   authType: AuthType
   siteUrl: string
   pat: string
@@ -14,117 +14,146 @@ interface FormDraft {
   rememberAuth: boolean
 }
 
-export function useAuthForm(initialConfig?: AuthConfig | null) {
-  const authType = ref<AuthType>(initialConfig?.type ?? 'pat')
-  const siteUrl = ref(initialConfig?.siteUrl ?? '')
-  const pat = ref(initialConfig?.pat ?? '')
-  const username = ref(initialConfig?.username ?? '')
-  const password = ref(initialConfig?.password ?? '')
-  const rememberAuth = ref(initialConfig?.rememberAuth ?? false)
+type FormField = keyof FormState
 
-  const canSave = computed(() => {
+const DEFAULT_STATE: FormState = {
+  authType: 'pat',
+  siteUrl: '',
+  pat: '',
+  username: '',
+  password: '',
+  rememberAuth: false,
+}
+
+export function useAuthForm(initialConfig?: AuthConfig | null) {
+
+  const state = {
+    authType: ref<AuthType>(initialConfig?.type ?? DEFAULT_STATE.authType),
+    siteUrl: ref(initialConfig?.siteUrl ?? DEFAULT_STATE.siteUrl),
+    pat: ref(initialConfig?.pat ?? DEFAULT_STATE.pat),
+    username: ref(initialConfig?.username ?? DEFAULT_STATE.username),
+    password: ref(initialConfig?.password ?? DEFAULT_STATE.password),
+    rememberAuth: ref(initialConfig?.rememberAuth ?? DEFAULT_STATE.rememberAuth),
+  }
+
+  const isValid = computed(() => {
+    const { siteUrl, authType, pat, username, password } = state
+
     if (!siteUrl.value.trim()) return false
-    if (authType.value === 'pat') {
-      return !!pat.value.trim()
-    }
-    return !!(username.value.trim() && password.value.trim())
+
+    return authType.value === 'pat'
+      ? Boolean(pat.value.trim())
+      : Boolean(username.value.trim() && password.value.trim())
   })
 
-  function saveDraft() {
-    const draft: FormDraft = {
-      authType: authType.value,
-      siteUrl: siteUrl.value,
-      pat: pat.value,
-      username: username.value,
-      password: password.value,
-      rememberAuth: rememberAuth.value,
-    }
-    sessionStorage.setItem(AUTH_FORM_DRAFT_KEY, JSON.stringify(draft))
-  }
+  const getCurrentState = (): FormState => ({
+    authType: state.authType.value,
+    siteUrl: state.siteUrl.value,
+    pat: state.pat.value,
+    username: state.username.value,
+    password: state.password.value,
+    rememberAuth: state.rememberAuth.value,
+  })
 
-  function loadDraft(): FormDraft | null {
-    const stored = sessionStorage.getItem(AUTH_FORM_DRAFT_KEY)
-    if (stored) {
-      try {
-        return JSON.parse(stored)
-      } catch {
-        return null
+  const setState = (newState: Partial<FormState>) => {
+    Object.entries(newState).forEach(([key, value]) => {
+      const fieldKey = key as FormField
+      if (fieldKey in state) {
+        state[fieldKey].value = value
       }
+    })
+  }
+
+  const saveDraft = (): void => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(getCurrentState()))
+  }
+
+  const loadDraft = (): FormState | null => {
+    const stored = sessionStorage.getItem(STORAGE_KEY)
+    if (!stored) return null
+
+    try {
+      return JSON.parse(stored) as FormState
+    } catch {
+      console.warn('Failed to parse auth form draft')
+      return null
     }
-    return null
   }
 
-  function clearDraft() {
-    sessionStorage.removeItem(AUTH_FORM_DRAFT_KEY)
+  const clearDraft = (): void => {
+    sessionStorage.removeItem(STORAGE_KEY)
   }
 
-  function resetForm(config?: AuthConfig | null) {
+  const resetForm = (config?: AuthConfig | null): void => {
+    clearDraft()
+
     if (config) {
-      authType.value = config.type
-      siteUrl.value = config.siteUrl
-      pat.value = config.pat ?? ''
-      username.value = config.username ?? ''
-      password.value = config.password ?? ''
-      rememberAuth.value = config.rememberAuth ?? false
-      clearDraft()
-    } else {
-      const draft = loadDraft()
-      if (draft) {
-        authType.value = draft.authType
-        siteUrl.value = draft.siteUrl
-        pat.value = draft.pat
-        username.value = draft.username
-        password.value = draft.password
-        rememberAuth.value = draft.rememberAuth
-      } else {
-        authType.value = 'pat'
-        siteUrl.value = ''
-        pat.value = ''
-        username.value = ''
-        password.value = ''
-        rememberAuth.value = false
-      }
+      setState({
+        authType: config.type,
+        siteUrl: config.siteUrl,
+        pat: config.pat ?? DEFAULT_STATE.pat,
+        username: config.username ?? DEFAULT_STATE.username,
+        password: config.password ?? DEFAULT_STATE.password,
+        rememberAuth: config.rememberAuth ?? DEFAULT_STATE.rememberAuth,
+      })
+      return
     }
+
+    const draft = loadDraft()
+    setState(draft ?? DEFAULT_STATE)
   }
 
-  function clearForm() {
-    authType.value = 'pat'
-    siteUrl.value = ''
-    pat.value = ''
-    username.value = ''
-    password.value = ''
-    rememberAuth.value = false
+  const clearForm = (): void => {
+    setState(DEFAULT_STATE)
     clearDraft()
   }
 
-  function buildConfig(): AuthConfig | null {
-    if (!canSave.value) return null
+  const buildConfig = (): AuthConfig | null => {
+    if (!isValid.value) return null
+
+    const { authType, siteUrl, rememberAuth } = state
+    const trimmedSiteUrl = siteUrl.value.trim()
+
+    const baseConfig = {
+      type: authType.value,
+      siteUrl: trimmedSiteUrl,
+      rememberAuth: rememberAuth.value,
+    }
+
+    if (authType.value === 'pat') {
+      return { ...baseConfig, pat: state.pat.value.trim() }
+    }
 
     return {
-      type: authType.value,
-      siteUrl: siteUrl.value.trim(),
-      rememberAuth: rememberAuth.value,
-      ...(authType.value === 'pat'
-        ? { pat: pat.value.trim() }
-        : { username: username.value.trim(), password: password.value.trim() }
-      ),
+      ...baseConfig,
+      username: state.username.value.trim(),
+      password: state.password.value.trim(),
     }
   }
 
-  watch([authType, siteUrl, pat, username, password, rememberAuth], () => {
-    const hasAnyValue = siteUrl.value || pat.value || username.value || password.value
-    if (hasAnyValue) {
-      saveDraft()
-    }
-  }, { deep: true })
+  let saveTimer: ReturnType<typeof setTimeout> | null = null
+
+  watch(
+    [state.authType, state.siteUrl, state.pat, state.username, state.password, state.rememberAuth],
+    () => {
+      const hasAnyValue = state.siteUrl.value || state.pat.value || state.username.value || state.password.value
+
+      if (!hasAnyValue) return
+
+      if (saveTimer) clearTimeout(saveTimer)
+      saveTimer = setTimeout(saveDraft, 300)
+    },
+    { deep: true }
+  )
 
   return {
-    authType,
-    siteUrl,
-    pat,
-    username,
-    password,
-    rememberAuth,
+    authType: state.authType,
+    siteUrl: state.siteUrl,
+    pat: state.pat,
+    username: state.username,
+    password: state.password,
+    rememberAuth: state.rememberAuth,
+    canSave: isValid,
     resetForm,
     clearForm,
     buildConfig,

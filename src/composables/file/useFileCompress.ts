@@ -1,4 +1,4 @@
-import {ref, watch} from 'vue'
+import {ref, watch, computed} from 'vue'
 import {COMPRESS_CONFIG_STORAGE_KEY} from '@/constants'
 import {compressImage, ConcurrencyLimiter} from '@/utils'
 import type {CompressConfig} from '@/utils/imageCompress'
@@ -51,7 +51,8 @@ export function useFileCompress() {
   const maxHeight = ref(config.maxHeight)
   const keepOriginalFormat = ref(config.keepOriginalFormat)
   const maxConcurrent = ref(config.maxConcurrent)
-  const compressing = ref(false)
+  const compressingCount = ref(0)
+  const compressing = computed(() => compressingCount.value > 0)
 
   const limiter = new ConcurrencyLimiter(maxConcurrent.value)
 
@@ -72,7 +73,7 @@ export function useFileCompress() {
       return file
     }
 
-    compressing.value = true
+    compressingCount.value++
     try {
       return await limiter.run(async () => {
         return await compressImage(
@@ -84,7 +85,7 @@ export function useFileCompress() {
         )
       })
     } finally {
-      compressing.value = false
+      compressingCount.value--
     }
   }
 
