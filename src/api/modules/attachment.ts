@@ -39,6 +39,6 @@ export class AttachmentApi {
       )
 
       return response.data
-    }, 10)
+    })
   }
 }
