@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
-import { RenameConfigPanel, ConvertConfigPanel, CompressConfigPanel } from '.'
+import { RenameConfigPanel, ConvertConfigPanel, CompressConfigPanel, QuickLinkConfigPanel } from '.'
 import type { RenameMode } from '@/composables/file'
 
 interface Props {
@@ -17,6 +17,7 @@ interface Props {
   compressMaxHeight: number
   compressKeepOriginalFormat: boolean
   compressMaxConcurrent: number
+  quickLinkEnabled: boolean
 }
 
 defineProps<Props>()
@@ -34,6 +35,7 @@ const emit = defineEmits<{
   (e: 'update:compressMaxHeight', value: number): void
   (e: 'update:compressKeepOriginalFormat', value: boolean): void
   (e: 'update:compressMaxConcurrent', value: number): void
+  (e: 'update:quickLinkEnabled', value: boolean): void
 }>()
 
 function handleClose() {
@@ -95,6 +97,12 @@ function handleClose() {
           @update:keep-original-format="emit('update:compressKeepOriginalFormat', $event)"
           @update:max-concurrent="emit('update:compressMaxConcurrent', $event)"
           @disable-convert="emit('update:convertEnabled', false)"
+        />
+
+        <QuickLinkConfigPanel
+          :enabled="quickLinkEnabled"
+          :disabled="disabled"
+          @update:enabled="emit('update:quickLinkEnabled', $event)"
         />
       </div>
 

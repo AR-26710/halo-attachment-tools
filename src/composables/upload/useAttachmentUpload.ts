@@ -60,6 +60,8 @@ export function useAttachmentUpload() {
     compress,
   } = useFileCompress()
 
+  const quickLinkEnabled = ref(true)
+
   const showAuthModal = ref(false)
 
   const templatePreview = computed(() => getPreviewFilename())
@@ -210,6 +212,7 @@ export function useAttachmentUpload() {
     compressKeepOriginalFormat,
     compressMaxConcurrent,
     compressing,
+    quickLinkEnabled,
     showAuthModal,
     openAuthModal,
     closeAuthModal,

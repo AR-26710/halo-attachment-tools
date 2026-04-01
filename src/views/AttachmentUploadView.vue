@@ -33,6 +33,7 @@ const {
   compressMaxHeight,
   compressKeepOriginalFormat,
   compressMaxConcurrent,
+  quickLinkEnabled,
   showAuthModal,
   openAuthModal,
   closeAuthModal,
@@ -144,7 +145,7 @@ defineExpose({
           @upload="handleSingleUpload"
         />
 
-        <QuickLinkPanel :files="files" :site-url="authConfig?.siteUrl" />
+        <QuickLinkPanel v-if="quickLinkEnabled" :files="files" :site-url="authConfig?.siteUrl" />
 
         <div v-if="files.length > 0" class="flex justify-center pt-2">
           <button
@@ -182,6 +183,7 @@ defineExpose({
       :compress-max-height="compressMaxHeight"
       :compress-keep-original-format="compressKeepOriginalFormat"
       :compress-max-concurrent="compressMaxConcurrent"
+      :quick-link-enabled="quickLinkEnabled"
       @close="closeConfigModal"
       @update:rename-mode="renameMode = $event"
       @update:rename-template="renameTemplate = $event"
@@ -194,6 +196,7 @@ defineExpose({
       @update:compress-max-height="compressMaxHeight = $event"
       @update:compress-keep-original-format="compressKeepOriginalFormat = $event"
       @update:compress-max-concurrent="compressMaxConcurrent = $event"
+      @update:quick-link-enabled="quickLinkEnabled = $event"
     />
 
     <AuthModal
