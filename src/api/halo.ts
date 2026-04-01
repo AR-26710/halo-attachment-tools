@@ -86,9 +86,6 @@ export class HaloApiService {
     return this.attachmentApi
   }
 
-  setOnUploadRateLimitWait(callback: (waitTimeMs: number) => void): void {
-    this.apiClient.setOnUploadRateLimitWait(callback)
-  }
 }
 
 export const haloApi = new HaloApiService()

@@ -1,26 +1,6 @@
 import axios, { isAxiosError } from 'axios'
 import type { AxiosInstance, AxiosError } from 'axios'
 import type { AuthManager } from './auth'
-import { defaultRateLimiter, uploadRateLimiter } from '@/utils/rateLimiter'
-import { RequestQueue } from '@/utils/requestQueue'
-import type { RetryConfig } from '@/utils/requestQueue'
-
-const DEFAULT_QUEUE_CONFIG: RetryConfig = {
-  maxRetries: 3,
-  baseDelay: 1000,
-  maxDelay: 10000,
-  retryableStatusCodes: [429, 500, 502, 503, 504],
-}
-
-const UPLOAD_QUEUE_CONFIG: RetryConfig = {
-  maxRetries: 3,
-  baseDelay: 2000,
-  maxDelay: 30000,
-  retryableStatusCodes: [429, 500, 502, 503, 504],
-}
-
-const DEFAULT_CONCURRENCY = 5
-const UPLOAD_CONCURRENCY = 3
 
 const ERROR_MESSAGES = {
   UNAUTHORIZED: '认证失败，请检查认证信息',
@@ -43,13 +23,9 @@ const AXIOS_ERROR_CODES = {
 export class ApiClient {
   private client: AxiosInstance | null = null
   private readonly authManager: AuthManager
-  private readonly requestQueue: RequestQueue
-  private readonly uploadQueue: RequestQueue
 
   constructor(authManager: AuthManager) {
     this.authManager = authManager
-    this.requestQueue = new RequestQueue(defaultRateLimiter, DEFAULT_QUEUE_CONFIG, DEFAULT_CONCURRENCY)
-    this.uploadQueue = new RequestQueue(uploadRateLimiter, UPLOAD_QUEUE_CONFIG, UPLOAD_CONCURRENCY)
   }
 
   init(): void {
@@ -120,14 +96,10 @@ export class ApiClient {
   }
 
   async request<T>(execute: () => Promise<T>): Promise<T> {
-    return this.requestQueue.enqueue(execute)
+    return execute()
   }
 
-  async upload<T>(execute: () => Promise<T>, priority = 10): Promise<T> {
-    return this.uploadQueue.enqueue(execute, priority)
-  }
-
-  setOnUploadRateLimitWait(callback: (waitTimeMs: number) => void): void {
-    this.uploadQueue.setOnRateLimitWaitCallback(callback)
+  async upload<T>(execute: () => Promise<T>): Promise<T> {
+    return execute()
   }
 }

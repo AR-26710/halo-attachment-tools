@@ -20,8 +20,6 @@ const {
   uploading,
   uploadProgress,
   hasPolicies,
-  isRateLimited,
-  rateLimitWaitTime,
   files,
   isDragging,
   renameMode,
@@ -159,10 +157,6 @@ defineExpose({
           </button>
         </div>
 
-        <div v-if="isRateLimited" class="alert alert-info text-sm shadow-md">
-          <Icon icon="mdi:clock-outline" class="h-4 w-4 md:h-5 md:w-5" />
-          <span>请求频率过高，等待 {{ rateLimitWaitTime }} 秒后继续...</span>
-        </div>
       </template>
     </template>
 
