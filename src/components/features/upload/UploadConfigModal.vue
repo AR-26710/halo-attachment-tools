@@ -76,6 +76,7 @@ function handleClose() {
           @update:enabled="emit('update:convertEnabled', $event)"
           @update:quality="emit('update:convertQuality', $event)"
           @update:max-concurrent="emit('update:convertMaxConcurrent', $event)"
+          @disable-compress="emit('update:compressEnabled', false)"
         />
 
         <CompressConfigPanel
@@ -93,6 +94,7 @@ function handleClose() {
           @update:max-height="emit('update:compressMaxHeight', $event)"
           @update:keep-original-format="emit('update:compressKeepOriginalFormat', $event)"
           @update:max-concurrent="emit('update:compressMaxConcurrent', $event)"
+          @disable-convert="emit('update:convertEnabled', false)"
         />
       </div>
 

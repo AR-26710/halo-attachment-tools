@@ -17,6 +17,7 @@ const emit = defineEmits<{
   (e: 'update:enabled', value: boolean): void
   (e: 'update:quality', value: number): void
   (e: 'update:maxConcurrent', value: number): void
+  (e: 'disableCompress'): void
 }>()
 
 const isExpanded = ref(false)
@@ -34,11 +35,16 @@ defineExpose({
   toggle,
 })
 
-const isDisabled = computed(() => props.disabled || props.compressEnabled)
+const isDisabled = computed(() => props.disabled)
 
 function handleEnabledChange(event: Event) {
   const target = event.target as HTMLInputElement
-  emit('update:enabled', target.checked)
+  const newValue = target.checked
+  emit('update:enabled', newValue)
+  // 开启转换时，自动关闭压缩功能
+  if (newValue && props.compressEnabled) {
+    emit('disableCompress')
+  }
 }
 
 function handleQualityChange(value: number) {
@@ -92,7 +98,7 @@ function handleMaxConcurrentChange(event: Event) {
 
       <div v-if="compressEnabled" class="alert alert-warning alert-sm gap-2">
         <Icon icon="mdi:alert-circle-outline" class="h-4 w-4 shrink-0" />
-        <span class="text-xs">图片压缩已启用，无法同时使用图片格式转换功能</span>
+        <span class="text-xs">图片压缩已启用，开启转换将自动关闭压缩功能</span>
       </div>
 
       <div
