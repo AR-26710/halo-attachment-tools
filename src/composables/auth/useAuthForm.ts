@@ -1,5 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import type { AuthConfig } from '@/types'
+import { encryptData, decryptData } from '@/utils'
 
 const STORAGE_KEY = 'halo_auth_form_draft' as const
 
@@ -64,16 +65,18 @@ export function useAuthForm(initialConfig?: AuthConfig | null) {
     })
   }
 
-  const saveDraft = (): void => {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(getCurrentState()))
+  const saveDraft = async (): Promise<void> => {
+    const encrypted = await encryptData(JSON.stringify(getCurrentState()))
+    sessionStorage.setItem(STORAGE_KEY, encrypted)
   }
 
-  const loadDraft = (): FormState | null => {
+  const loadDraft = async (): Promise<FormState | null> => {
     const stored = sessionStorage.getItem(STORAGE_KEY)
     if (!stored) return null
 
     try {
-      return JSON.parse(stored) as FormState
+      const decrypted = await decryptData(stored)
+      return JSON.parse(decrypted) as FormState
     } catch {
       console.warn('Failed to parse auth form draft')
       return null
@@ -84,7 +87,7 @@ export function useAuthForm(initialConfig?: AuthConfig | null) {
     sessionStorage.removeItem(STORAGE_KEY)
   }
 
-  const resetForm = (config?: AuthConfig | null): void => {
+  const resetForm = async (config?: AuthConfig | null): Promise<void> => {
     clearDraft()
 
     if (config) {
@@ -99,7 +102,7 @@ export function useAuthForm(initialConfig?: AuthConfig | null) {
       return
     }
 
-    const draft = loadDraft()
+    const draft = await loadDraft()
     setState(draft ?? DEFAULT_STATE)
   }
 
@@ -141,7 +144,11 @@ export function useAuthForm(initialConfig?: AuthConfig | null) {
       if (!hasAnyValue) return
 
       if (saveTimer) clearTimeout(saveTimer)
-      saveTimer = setTimeout(saveDraft, 300)
+      saveTimer = setTimeout(() => {
+        saveDraft().catch((error) => {
+          console.error('Failed to save draft:', error)
+        })
+      }, 300)
     },
     { deep: true }
   )

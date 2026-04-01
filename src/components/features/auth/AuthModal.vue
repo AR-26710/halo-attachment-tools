@@ -39,9 +39,9 @@ const {
   clearConfig,
 } = useAuthConnection()
 
-watch(() => props.show, (show) => {
+watch(() => props.show, async (show) => {
   if (show) {
-    resetForm(props.initialConfig)
+    await resetForm(props.initialConfig)
   }
 })
 
