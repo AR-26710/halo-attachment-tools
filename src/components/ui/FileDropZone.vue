@@ -28,7 +28,7 @@ const handleDrop = (event: DragEvent) => {
 
 <template>
   <div
-    class="group relative border-2 border-dashed rounded-xl p-8 md:p-10 text-center transition-all duration-300 cursor-pointer overflow-hidden"
+    class="group relative border-2 border-dashed rounded-xl p-8 md:p-10 text-center transition-all duration-300 cursor-pointer"
     :class="[
       isDragging 
         ? 'border-primary bg-primary/5 shadow-lg shadow-primary/20' 

@@ -113,7 +113,7 @@ function getStatusText(status?: string) {
 
 <template>
   <div v-if="files.length > 0" class="space-y-3 md:space-y-4">
-    <div class="card bg-base-100 border border-base-300 overflow-hidden">
+    <div class="card bg-base-100 border border-base-300 rounded-xl">
       <div class="card-body p-3 md:p-4">
         <div class="flex justify-between items-center gap-3">
           <div class="flex items-center gap-2">
@@ -142,7 +142,7 @@ function getStatusText(status?: string) {
       </div>
     </div>
 
-    <div class="hidden md:block card bg-base-100 border border-base-300 overflow-hidden">
+    <div class="hidden md:block card bg-base-100 border border-base-300 rounded-xl">
       <table class="table table-zebra">
         <thead class="bg-base-200/60">
           <tr>
@@ -225,7 +225,7 @@ function getStatusText(status?: string) {
       <div
         v-for="fileItem in paginatedFiles"
         :key="fileItem.id"
-        class="card bg-base-100 border border-base-300 overflow-hidden shadow-sm"
+        class="card bg-base-100 border border-base-300 rounded-xl shadow-sm"
         :class="{ 'opacity-60': fileItem.status === 'uploading' }"
       >
         <div class="p-4">
@@ -295,7 +295,7 @@ function getStatusText(status?: string) {
       </div>
     </div>
 
-    <div v-if="totalPages > 1" class="card bg-base-100 border border-base-300 overflow-hidden">
+    <div v-if="totalPages > 1" class="card bg-base-100 border border-base-300 rounded-xl">
       <div class="card-body p-3 md:p-4">
         <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
           <div class="text-sm text-base-content/70">

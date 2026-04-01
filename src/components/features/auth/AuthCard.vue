@@ -12,7 +12,7 @@ defineEmits<(e: 'configure') => void>()
 </script>
 
 <template>
-  <div class="card bg-base-100 shadow-sm">
+  <div class="card bg-base-100 shadow-sm rounded-xl">
     <div class="card-body p-4 flex flex-row items-center justify-between">
       <div class="flex items-center gap-3">
         <div

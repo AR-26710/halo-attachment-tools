@@ -70,7 +70,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="space-y-4 md:space-y-6 overflow-hidden">
+  <div class="space-y-4 md:space-y-6 py-2">
     <AuthCard
       :is-authenticated="isAuthenticated"
       :site-url="authConfig?.siteUrl"
@@ -80,23 +80,23 @@ defineExpose({
 
     <template v-if="isAuthenticated">
       <div v-if="loading" class="space-y-4">
-        <div class="card bg-base-100 border border-base-300">
+        <div class="card bg-base-100 border border-base-300 rounded-xl">
           <div class="card-body p-4">
             <Skeleton variant="text" width="30%" />
             <Skeleton variant="rounded" height="60px" />
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-          <div class="card bg-base-100 border border-base-300 p-4">
+          <div class="card bg-base-100 border border-base-300 rounded-xl p-4">
             <Skeleton variant="text" width="40%" class="mb-2" />
             <Skeleton variant="rounded" height="40px" />
           </div>
-          <div class="card bg-base-100 border border-base-300 p-4">
+          <div class="card bg-base-100 border border-base-300 rounded-xl p-4">
             <Skeleton variant="text" width="40%" class="mb-2" />
             <Skeleton variant="rounded" height="40px" />
           </div>
         </div>
-        <div class="card bg-base-100 border border-base-300 p-6">
+        <div class="card bg-base-100 border border-base-300 rounded-xl p-6">
           <div class="flex flex-col items-center">
             <Skeleton variant="circular" width="80px" height="80px" class="mb-4" />
             <Skeleton variant="text" width="50%" class="mb-2" />

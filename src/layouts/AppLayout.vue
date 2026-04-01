@@ -12,8 +12,8 @@ import { version } from '../../package.json'
     </header>
 
     <div class="flex-1 flex flex-col pt-20 md:pt-24">
-      <main class="flex-1 pb-8 md:pb-12">
-        <div class="max-w-4xl mx-auto px-3 md:px-4">
+      <main class="flex-1 pb-8 md:pb-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto">
           <slot />
         </div>
       </main>
