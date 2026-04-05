@@ -12,29 +12,35 @@ function generateUUIDNoDash(): string {
 
 function generateRandomAlphabetic(length: number): string {
   const chars = 'abcdefghijklmnopqrstuvwxyz'
-  let result = ''
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  const maxLength = Math.min(length, chars.length)
+  const charArray = chars.split('')
+  for (let i = charArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[charArray[i], charArray[j]] = [charArray[j], charArray[i]]
   }
-  return result
+  return charArray.slice(0, maxLength).join('')
 }
 
 function generateRandomNumeric(length: number): string {
   const chars = '0123456789'
-  let result = ''
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  const maxLength = Math.min(length, chars.length)
+  const charArray = chars.split('')
+  for (let i = charArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[charArray[i], charArray[j]] = [charArray[j], charArray[i]]
   }
-  return result
+  return charArray.slice(0, maxLength).join('')
 }
 
 function generateRandomAlphanumeric(length: number): string {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
-  let result = ''
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  const maxLength = Math.min(length, chars.length)
+  const charArray = chars.split('')
+  for (let i = charArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[charArray[i], charArray[j]] = [charArray[j], charArray[i]]
   }
-  return result
+  return charArray.slice(0, maxLength).join('')
 }
 
 export function getFileExtension(filename: string): string {
@@ -74,15 +80,25 @@ export function renameFile(originalFilename: string, template: string): string {
   result = result.replaceAll('${second}', () => String(now.getSeconds()).padStart(2, '0'))
   result = result.replaceAll('${millisecond}', () => String(now.getMilliseconds()).padStart(3, '0'))
 
-  result = result.replaceAll(/\${random-alphabetic:(\d+)}/g, (_match, p1) => {
-    return generateRandomAlphabetic(Number.parseInt(p1, 10))
-  })
-  result = result.replaceAll(/\${random-num:(\d+)}/g, (_match, p1) => {
-    return generateRandomNumeric(Number.parseInt(p1, 10))
-  })
-  result = result.replaceAll(/\${random-alphanumeric:(\d+)}/g, (_match, p1) => {
-    return generateRandomAlphanumeric(Number.parseInt(p1, 10))
-  })
+  const randomGenerators: Record<string, (length: number) => string> = {
+    'random-alphabetic': generateRandomAlphabetic,
+    'random-num': generateRandomNumeric,
+    'random-alphanumeric': generateRandomAlphanumeric,
+  }
+  for (const [type, generator] of Object.entries(randomGenerators)) {
+    result = result.replaceAll(new RegExp(`\\$\\{${type}(:\\d+)?\\}`, 'g'), (_match, p1) => {
+      const DEFAULT_LENGTH = 4
+      const MIN_LENGTH = 4
+      let length = DEFAULT_LENGTH
+      if (p1) {
+        const parsed = Number.parseInt(p1.slice(1), 10)
+        if (!Number.isNaN(parsed) && parsed >= MIN_LENGTH) {
+          length = parsed
+        }
+      }
+      return generator(length)
+    })
+  }
 
   return result + extension
 }
